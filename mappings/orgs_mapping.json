@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "name": {
+        "type": "text",
+        "fields": { "keyword": { "type": "keyword" } }
+      },
+      "url": { "type": "keyword" },
+      "careers_url": { "type": "keyword" },
+      "scrape_url": { "type": "keyword" },
+      "source": { "type": "keyword" },
+      "description": { "type": "text" },
+      "country": { "type": "keyword" },
+      "country_code": { "type": "keyword" },
+      "active": { "type": "boolean", "null_value": true },
+      "excluded": { "type": "boolean", "null_value": false },
+      "jobs_posted": { "type": "integer" },
+      "last_scraped_at": { "type": "date" },
+      "created": { "type": "date" },
+      "updated_at": { "type": "date" }
+    }
+  }
+}

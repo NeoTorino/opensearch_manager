@@ -1,0 +1,8 @@
+body { background: #f5f7fa; }
+.navbar-brand { letter-spacing: .1px; }
+.table th { white-space: nowrap; font-size: .84rem; }
+.table td { font-size: .9rem; }
+.id-column { min-width: 125px; max-width: 150px; }
+.cell-value { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.form-label { margin-bottom: .35rem; }
+code { overflow-wrap: anywhere; }

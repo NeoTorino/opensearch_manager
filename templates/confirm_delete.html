@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Delete document · OpenSearch Manager{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card border-danger shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h4 text-danger">Delete document?</h1>
+        <p>This will permanently delete the following document from <code>{{ index_name }}</code>:</p>
+        <p><code class="text-break">{{ doc_id }}</code></p>
+        <p class="text-secondary small">This operation cannot be undone.</p>
+        <form method="post" class="d-flex justify-content-end gap-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <a class="btn btn-outline-secondary" href="{{ url_for('edit_document', index_name=index_name, doc_id=doc_id) }}">Cancel</a>
+          <button class="btn btn-danger" type="submit">Delete permanently</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Settings · OpenSearch Manager{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="h3 mb-1">Connection settings</h1>
+  <p class="text-secondary mb-0">Configure how this application connects to your OpenSearch cluster.</p>
+</div>
+
+<div class="row">
+  <div class="col-xl-8 col-xxl-7">
+    <form method="post" class="card shadow-sm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="card-body p-3 p-lg-4">
+        <h2 class="h5 mb-3">OpenSearch endpoint</h2>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label" for="host">IP address / hostname</label>
+            <input class="form-control" id="host" name="host" required value="{{ config.host }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="port">Port</label>
+            <input class="form-control" id="port" name="port" type="number" min="1" max="65535" required value="{{ config.port }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="username">Username</label>
+            <input class="form-control" id="username" name="username" autocomplete="username" value="{{ config.username }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="password">Password</label>
+            <input class="form-control" id="password" name="password" type="password" autocomplete="new-password"
+                   placeholder="{{ 'Saved — leave blank to keep it' if password_is_set else 'Enter password' }}">
+            <div class="form-text">{% if password_is_set %}A password is saved. It is never displayed here.{% else %}No password is currently saved.{% endif %}</div>
+          </div>
+          {% if password_is_set %}
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="clear_password" id="clear_password">
+              <label class="form-check-label" for="clear_password">Clear the saved password</label>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <hr class="my-4">
+        <h2 class="h5 mb-3">TLS / certificate settings</h2>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" role="switch" name="use_ssl" id="use_ssl" {% if config.use_ssl %}checked{% endif %}>
+          <label class="form-check-label" for="use_ssl">Use HTTPS</label>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="ca_certs">CA certificate file or directory</label>
+          <input class="form-control" id="ca_certs" name="ca_certs" value="{{ config.ca_certs }}"
+                 placeholder="/absolute/path/to/opensearch-root-ca.pem">
+          <div class="form-text">Path on the computer running Flask. Relative paths are resolved from the application folder. Leave empty to use the system trust store.</div>
+        </div>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" role="switch" name="verify_certs" id="verify_certs"
+                 {% if config.verify_certs %}checked{% endif %}>
+          <label class="form-check-label" for="verify_certs">Verify TLS certificate</label>
+        </div>
+        <div class="alert alert-warning small mb-0">
+          Disabling certificate verification makes the connection vulnerable to interception. Keep it enabled and provide your CA certificate whenever possible.
+        </div>
+
+        <hr class="my-4">
+        <div class="col-md-4">
+          <label class="form-label" for="timeout">Connection timeout (seconds)</label>
+          <input class="form-control" id="timeout" name="timeout" type="number" min="1" max="300" value="{{ config.timeout }}">
+        </div>
+      </div>
+      <div class="card-footer bg-white d-flex flex-wrap justify-content-between gap-2 p-3">
+        <button class="btn btn-outline-primary" type="submit" name="action" value="test">Test connection</button>
+        <button class="btn btn-primary" type="submit" name="action" value="save">Save settings</button>
+      </div>
+    </form>
+
+    <div class="alert alert-info mt-3 small">
+      <strong>Security:</strong> the password is stored in <code>instance/config.json</code> on this computer. On Linux and FreeBSD, the application restricts that file to owner read/write permissions. Keep this application bound to <code>127.0.0.1</code> and do not expose it directly to your LAN.
+    </div>
+  </div>
+</div>
+{% endblock %}

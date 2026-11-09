@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ index_info.title }} · OpenSearch Manager
+{% endblock %}
+
+{% block content %}
+
+<style>
+  th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+  th.sortable:hover { background-color: rgba(0, 0, 0, .05); }
+  th.sortable .sort-indicator { display: inline-block; width: 1em; color: #6c757d; }
+  .filter-row input { min-width: 90px; }
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+
+  <div>
+    <h1 class="h3 mb-1">
+      {{ index_info.title }}
+    </h1>
+
+    <div class="text-secondary small">
+      <code>{{ index_name }}</code>
+      ·
+      {{ total }} document{% if total != 1 %}s{% endif %}
+    </div>
+  </div>
+
+  <a class="btn btn-primary"
+     href="{{ url_for('create_document', index_name=index_name) }}">
+    ＋ New document
+  </a>
+
+</div>
+
+
+<form class="row g-2 mb-3" method="get">
+
+  <div class="col-sm-8 col-md-6 col-lg-4">
+
+    <input
+      class="form-control"
+      type="search"
+      name="q"
+      value="{{ query }}"
+      placeholder="Search this index…"
+      aria-label="Search"
+    >
+
+  </div>
+
+  <div class="col-auto">
+    <button class="btn btn-outline-primary" type="submit">
+      Search
+    </button>
+  </div>
+
+  {% if query %}
+
+    <div class="col-auto">
+
+      <a class="btn btn-outline-secondary"
+         href="{{ url_for('index_view', index_name=index_name) }}">
+        Clear
+      </a>
+
+    </div>
+
+  {% endif %}
+
+</form>
+
+
+{% if connection_error %}
+
+  <div class="alert alert-warning">
+
+    The index could not be displayed.
+    Check your connection details in
+    <a href="{{ url_for('settings') }}">Settings</a>.
+
+  </div>
+
+
+{% elif records %}
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <span class="text-secondary small" id="visible-count">
+      Showing {{ records|length }} of {{ records|length }} rows on this page
+    </span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-filters">
+      Clear filters &amp; sort
+    </button>
+  </div>
+
+  <div class="table-responsive bg-white border rounded shadow-sm">
+
+    <table class="table table-hover table-sm align-middle mb-0" id="records-table">
+
+      <thead class="table-light">
+
+        <tr>
+
+          <th class="id-column sortable" data-col="0" aria-sort="none">
+            Document ID <span class="sort-indicator"></span>
+          </th>
+
+          {% for column in columns %}
+
+            <th class="sortable" data-col="{{ loop.index }}" aria-sort="none">
+              {{ column }} <span class="sort-indicator"></span>
+            </th>
+
+          {% endfor %}
+
+          <th class="text-end">
+            Actions
+          </th>
+
+        </tr>
+
+        <tr class="filter-row">
+
+          <th class="id-column">
+            <input type="search" class="form-control form-control-sm column-filter"
+                   data-col="0" placeholder="Filter…" aria-label="Filter Document ID">
+          </th>
+
+          {% for column in columns %}
+
+            <th>
+              <input type="search" class="form-control form-control-sm column-filter"
+                     data-col="{{ loop.index }}" placeholder="Filter…"
+                     aria-label="Filter {{ column }}">
+            </th>
+
+          {% endfor %}
+
+          <th></th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody>
+
+        {% for record in records %}
+
+          <tr>
+
+            <td class="id-column" data-value="{{ record['id'] }}">
+
+              <code title="{{ record['id'] }}">
+                {{ record['id'][:12] }}{% if record['id']|length > 12 %}…{% endif %}
+              </code>
+
+            </td>
+
+
+            {% for value in record["values"] %}
+
+              <td class="cell-value" data-value="{{ value if value else '' }}" title="{{ value }}">
+                {{ value if value else "—" }}
+              </td>
+
+            {% endfor %}
+
+
+            <td class="text-end text-nowrap">
+
+              <a
+                class="btn btn-sm btn-outline-primary"
+                href="{{ url_for('edit_document', index_name=index_name, doc_id=record['id']) }}"
+              >
+                View/Edit
+              </a>
+
+              <a
+                class="btn btn-sm btn-outline-danger"
+                href="{{ url_for('delete_document', index_name=index_name, doc_id=record['id']) }}"
+              >
+                Delete
+              </a>
+
+            </td>
+
+          </tr>
+
+        {% endfor %}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <div id="no-matches" class="alert alert-secondary mt-3 d-none">
+    No rows on this page match the current filters.
+  </div>
+
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+
+    <span class="text-secondary small">
+      Page {{ page }} of {{ pages }}
+    </span>
+
+    <nav aria-label="Document pages">
+
+      <ul class="pagination pagination-sm mb-0">
+
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+
+          <a
+            class="page-link"
+            href="{{ url_for('index_view', index_name=index_name, q=query, page=page-1) }}"
+          >
+            Previous
+          </a>
+
+        </li>
+
+
+        <li class="page-item {% if page >= pages %}disabled{% endif %}">
+
+          <a
+            class="page-link"
+            href="{{ url_for('index_view', index_name=index_name, q=query, page=page+1) }}"
+          >
+            Next
+          </a>
+
+        </li>
+
+      </ul>
+
+    </nav>
+
+  </div>
+
+
+{% else %}
+
+  <div class="border rounded bg-white p-5 text-center">
+
+    <h2 class="h5">
+      No documents found
+    </h2>
+
+    <p class="text-secondary mb-3">
+
+      {% if query %}
+        Try another search term.
+      {% else %}
+        This index is empty.
+      {% endif %}
+
+    </p>
+
+    <a
+      class="btn btn-primary"
+      href="{{ url_for('create_document', index_name=index_name) }}"
+    >
+      Create the first document
+    </a>
+
+  </div>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+(function () {
+  const table = document.getElementById('records-table');
+  if (!table) return;
+
+  const tbody = table.tBodies[0];
+  const headers = table.querySelectorAll('th.sortable');
+  const filters = table.querySelectorAll('.column-filter');
+  const countLabel = document.getElementById('visible-count');
+  const noMatches = document.getElementById('no-matches');
+  const clearBtn = document.getElementById('clear-filters');
+
+  const originalRows = Array.from(tbody.rows);
+  const total = originalRows.length;
+
+  let sortCol = null;
+  let sortDir = 'asc';
+
+  const cellValue = (row, col) =>
+    (row.cells[col].dataset.value || '').trim();
+
+  const isNumeric = (s) => s !== '' && !isNaN(Number(s));
+
+  function compare(a, b) {
+    // Empty values always go last, regardless of direction.
+    if (a === '' && b === '') return 0;
+    if (a === '') return 1;
+    if (b === '') return -1;
+
+    let result;
+    if (isNumeric(a) && isNumeric(b)) {
+      result = Number(a) - Number(b);
+    } else {
+      result = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    return sortDir === 'asc' ? result : -result;
+  }
+
+  function applySort() {
+    let rows;
+    if (sortCol === null) {
+      rows = originalRows.slice();
+    } else {
+      rows = originalRows.slice().sort((r1, r2) => {
+        const a = cellValue(r1, sortCol);
+        const b = cellValue(r2, sortCol);
+        // Keep empties last for both directions.
+        if (a === '' || b === '') return compare(a, b);
+        return compare(a, b);
+      });
+    }
+    rows.forEach((r) => tbody.appendChild(r));
+
+    headers.forEach((th) => {
+      const indicator = th.querySelector('.sort-indicator');
+      if (Number(th.dataset.col) === sortCol) {
+        th.setAttribute('aria-sort', sortDir === 'asc' ? 'ascending' : 'descending');
+        indicator.textContent = sortDir === 'asc' ? '▲' : '▼';
+      } else {
+        th.setAttribute('aria-sort', 'none');
+        indicator.textContent = '';
+      }
+    });
+  }
+
+  function applyFilters() {
+    const active = Array.from(filters)
+      .map((input) => ({
+        col: Number(input.dataset.col),
+        term: input.value.trim().toLowerCase(),
+      }))
+      .filter((f) => f.term !== '');
+
+    let visible = 0;
+    originalRows.forEach((row) => {
+      const match = active.every(
+        (f) => cellValue(row, f.col).toLowerCase().includes(f.term)
+      );
+      row.classList.toggle('d-none', !match);
+      if (match) visible++;
+    });
+
+    if (countLabel) {
+      countLabel.textContent =
+        `Showing ${visible} of ${total} rows on this page`;
+    }
+    if (noMatches) {
+      noMatches.classList.toggle('d-none', visible !== 0);
+    }
+  }
+
+  headers.forEach((th) => {
+    th.addEventListener('click', () => {
+      const col = Number(th.dataset.col);
+      if (sortCol === col) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortCol = col;
+        sortDir = 'asc';
+      }
+      applySort();
+    });
+  });
+
+  filters.forEach((input) => input.addEventListener('input', applyFilters));
+
+  clearBtn.addEventListener('click', () => {
+    filters.forEach((input) => { input.value = ''; });
+    sortCol = null;
+    sortDir = 'asc';
+    applySort();
+    applyFilters();
+  });
+})();
+</script>
+{% endblock %}

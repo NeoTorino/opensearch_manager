@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="h3">Page not found</h1>
+  <p class="text-secondary">The requested page does not exist.</p>
+  <a href="{{ url_for('home') }}" class="btn btn-primary">Go to indexes</a>
+</div>
+{% endblock %}
