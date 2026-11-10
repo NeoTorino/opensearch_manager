@@ -1,8 +1,231 @@
-body { background: #f5f7fa; }
-.navbar-brand { letter-spacing: .1px; }
-.table th { white-space: nowrap; font-size: .84rem; }
-.table td { font-size: .9rem; }
-.id-column { min-width: 125px; max-width: 150px; }
-.cell-value { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.form-label { margin-bottom: .35rem; }
-code { overflow-wrap: anywhere; }
+
+/* -----------------------------------------------------
+   General
+----------------------------------------------------- */
+
+body {
+    background: #f5f7fa;
+    color: #212529;
+}
+
+.navbar-brand {
+    letter-spacing: .1px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+main {
+    min-height: calc(100vh - 150px);
+}
+
+
+/* -----------------------------------------------------
+   Navbar
+----------------------------------------------------- */
+
+.navbar .nav-link {
+    font-size: .94rem;
+}
+
+.navbar .nav-link.active {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.navbar-search {
+    width: 100%;
+    max-width: 430px;
+}
+
+.navbar-search .form-control {
+    min-width: 150px;
+}
+
+.dropdown-menu {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .1);
+}
+
+
+/* -----------------------------------------------------
+   Cards
+----------------------------------------------------- */
+
+.card {
+    border: 1px solid #e1e5eb;
+    border-radius: .5rem;
+}
+
+.card-footer {
+    border-top: 1px solid #e9ecef;
+}
+
+
+/* -----------------------------------------------------
+   Forms
+----------------------------------------------------- */
+
+.form-label {
+    margin-bottom: .4rem;
+    font-size: .92rem;
+}
+
+.form-control,
+.form-select {
+    border-color: #ced4da;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .12);
+}
+
+.form-text {
+    font-size: .78rem;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+
+input[type="date"] {
+    min-width: 0;
+}
+
+
+/* -----------------------------------------------------
+   Tables
+----------------------------------------------------- */
+
+.table {
+    --bs-table-hover-bg: #f5f8fc;
+}
+
+.table th {
+    white-space: nowrap;
+    font-size: .84rem;
+    font-weight: 600;
+    color: #495057;
+    padding: .75rem .65rem;
+}
+
+.table td {
+    font-size: .88rem;
+    padding: .65rem;
+}
+
+.table thead th {
+    vertical-align: middle;
+}
+
+.id-column {
+    min-width: 125px;
+    max-width: 150px;
+}
+
+.cell-value {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+code {
+    overflow-wrap: anywhere;
+}
+
+
+/* -----------------------------------------------------
+   Sorting
+----------------------------------------------------- */
+
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+th.sortable:hover {
+    background-color: rgba(0, 0, 0, .05);
+}
+
+.sort-indicator {
+    display: inline-block;
+    width: 1em;
+    color: #0d6efd;
+    font-size: .75rem;
+}
+
+
+/* -----------------------------------------------------
+   Column filters
+----------------------------------------------------- */
+
+.filter-row th {
+    background: #f8f9fa;
+    padding: .45rem;
+}
+
+.filter-row input {
+    min-width: 90px;
+    font-size: .8rem;
+}
+
+
+/* -----------------------------------------------------
+   Buttons
+----------------------------------------------------- */
+
+.btn {
+    font-size: .9rem;
+}
+
+.btn-sm {
+    font-size: .8rem;
+}
+
+
+/* -----------------------------------------------------
+   Footer
+----------------------------------------------------- */
+
+footer {
+    border-top: 1px solid #e9ecef;
+    padding-top: 1rem;
+}
+
+
+/* -----------------------------------------------------
+   Responsive layout
+----------------------------------------------------- */
+
+@media (min-width: 1200px) {
+
+    .navbar-search {
+        width: 380px;
+    }
+
+}
+
+
+@media (max-width: 1199.98px) {
+
+    .navbar-search {
+        max-width: 100%;
+    }
+
+}
+
+
+@media (max-width: 767.98px) {
+
+    main {
+        padding-top: 1.25rem !important;
+    }
+
+    .table td {
+        font-size: .82rem;
+    }
+
+}

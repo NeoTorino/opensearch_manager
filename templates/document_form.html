@@ -1,72 +1,114 @@
+
 {% extends "base.html" %}
 
 {% block title %}
-{{ 'New' if mode == 'new' else 'Edit' }} {{ index_info.title }} · OpenSearch Manager
+  {{ 'New' if mode == 'new' else 'Edit' }} {{ index_info.title }} · OpenSearch Manager
 {% endblock %}
+
 
 {% block content %}
 
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-  <div>
-    <a class="small text-decoration-none"
-       href="{{ url_for('index_view', index_name=index_name) }}">
-      ← Back to {{ index_info.title }}
-    </a>
+<div class="mb-4">
 
-    <h1 class="h3 mt-2 mb-1">
+  <a
+    class="small text-decoration-none"
+    href="{{ url_for('index_view', index_name=index_name) }}"
+  >
+
+    ← Back to {{ index_info.title }}
+
+  </a>
+
+
+  <div class="mt-2">
+
+    <h1 class="h3 mb-1">
+
       {{ 'New document' if mode == 'new' else 'Edit document' }}
+
     </h1>
 
+
     {% if doc_id %}
+
       <div class="text-secondary small">
-        Document ID: <code>{{ doc_id }}</code>
+
+        Document ID:
+
+        <code>{{ doc_id }}</code>
+
       </div>
+
     {% endif %}
 
+
     {% if required_fields %}
+
       <div class="form-text mt-2">
-        <span class="text-danger">*</span> Required fields
+
+        <span class="text-danger">*</span>
+
+        Required fields
+
       </div>
+
     {% endif %}
+
   </div>
+
 </div>
 
 
 <form method="post" class="card shadow-sm">
 
-  <input type="hidden"
-         name="csrf_token"
-         value="{{ csrf_token() }}">
+  <input
+    type="hidden"
+    name="csrf_token"
+    value="{{ csrf_token() }}"
+  >
+
 
   <div class="card-body p-3 p-lg-4">
 
+
     <div class="row g-3">
+
 
       {% for field_name, spec in properties.items() %}
 
         {% set value = values.get(field_name, '') %}
+
         {% set field_type = spec.get('type', 'keyword') %}
+
         {% set is_required = field_name in required_fields %}
 
-        <div class="col-12
-          {% if field_name in textarea_fields or field_name in multi_value_fields %}
-            col-lg-6
-          {% else %}
-            col-md-6 col-lg-4
-          {% endif %}
-        ">
+        {% set wide_field = field_name in textarea_fields or field_type == 'text' %}
 
-          <label class="form-label fw-semibold"
-                 for="field-{{ field_name }}">
 
-            {{ field_name }}
+        <div class="col-12 {% if not wide_field %}col-md-6{% endif %}">
+
+
+          <label
+            class="form-label fw-semibold"
+            for="field-{{ field_name }}"
+          >
+
+            {{ field_name|replace('_', ' ')|title }}
+
 
             {% if is_required %}
-              <span class="text-danger" title="Required">*</span>
+
+              <span
+                class="text-danger"
+                title="Required"
+              >*</span>
+
             {% endif %}
 
           </label>
 
+
+          <!-- Multi-value fields -->
 
           {% if field_name in multi_value_fields %}
 
@@ -79,10 +121,57 @@
               {% if is_required %}required{% endif %}
             >{{ value|join('\n') if value is iterable and value is not string else value }}</textarea>
 
+
             <div class="form-text">
+
               One value per line. Leave empty to clear this field.
+
             </div>
 
+
+          <!-- Organisation source: existing suggestions or new value -->
+          {% elif index_name == 'orgs' and field_name == 'source' %}
+
+            {% set source_is_custom = value and value not in source_options %}
+
+            <select
+              class="form-select"
+              id="field-{{ field_name }}"
+              name="{{ field_name }}"
+              required
+            >
+              <option value="">Select a source...</option>
+
+              {% for source in source_options %}
+                <option value="{{ source }}"
+                  {% if value == source %}selected{% endif %}>
+                  {{ source }}
+                </option>
+              {% endfor %}
+
+              <option value="__new_source__"
+                {% if source_is_custom %}selected{% endif %}>
+                Other — enter a new source
+              </option>
+            </select>
+
+            <div id="new-source-container"
+                class="mt-2"
+                {% if not source_is_custom %}hidden{% endif %}>
+
+              <input
+                type="text"
+                class="form-control"
+                id="new-source"
+                name="source_new"
+                value="{{ value if source_is_custom else '' }}"
+                placeholder="Enter the new source..."
+                {% if source_is_custom %}required{% endif %}
+              >
+
+            </div>
+
+          <!-- Boolean fields -->
 
           {% elif field_type == 'boolean' %}
 
@@ -93,23 +182,39 @@
               {% if is_required %}required{% endif %}
             >
 
-              <option value=""
-                {% if value is none or value == '' %}selected{% endif %}>
+              <option
+                value=""
+                {% if value is none or value == '' %}selected{% endif %}
+              >
+
                 — Not set —
+
               </option>
 
-              <option value="true"
-                {% if value is sameas true or value == 'true' %}selected{% endif %}>
+
+              <option
+                value="true"
+                {% if value is sameas true or value == 'true' %}selected{% endif %}
+              >
+
                 Yes / true
+
               </option>
 
-              <option value="false"
-                {% if value is sameas false or value == 'false' %}selected{% endif %}>
+
+              <option
+                value="false"
+                {% if value is sameas false or value == 'false' %}selected{% endif %}
+              >
+
                 No / false
+
               </option>
 
             </select>
 
+
+          <!-- Numeric fields -->
 
           {% elif field_type in ['integer', 'float', 'double', 'long', 'short', 'byte'] %}
 
@@ -124,16 +229,20 @@
             >
 
 
+          <!-- Textareas -->
+
           {% elif field_name in textarea_fields or field_type == 'text' %}
 
             <textarea
               class="form-control"
               id="field-{{ field_name }}"
               name="{{ field_name }}"
-              rows="3"
+              rows="4"
               {% if is_required %}required{% endif %}
             >{{ value if value is not none else '' }}</textarea>
 
+
+          <!-- Date fields -->
 
           {% elif field_type == 'date' %}
 
@@ -143,22 +252,33 @@
                 class="form-control"
                 id="field-{{ field_name }}"
                 name="{{ field_name }}"
-                type="text"
-                placeholder="YYYY-MM-DD or ISO-8601 date/time"
-                value="{{ value if value is not none else '' }}"
+                type="date"
+                value="{{ value|date_input }}"
                 {% if is_required %}required{% endif %}
               >
+
 
               <button
                 class="btn btn-outline-secondary"
                 type="button"
                 data-set-today="field-{{ field_name }}"
               >
+
                 Today
+
               </button>
 
             </div>
 
+
+            <div class="form-text">
+
+              Date format: YYYY-MM-DD
+
+            </div>
+
+
+          <!-- Default text fields -->
 
           {% else %}
 
@@ -174,43 +294,70 @@
           {% endif %}
 
 
-          <div class="form-text">
-            {{ field_type }}
-            {% if field_name in multi_value_fields %}
-              · multi-value
-            {% endif %}
-          </div>
+          <!-- Mapping information -->
+
+          {% if field_name not in multi_value_fields and not (index_name == 'orgs' and field_name == 'source') %}
+
+            <div class="form-text">
+
+              {{ field_type }}
+
+            </div>
+
+          {% endif %}
+
 
         </div>
 
       {% endfor %}
+
 
     </div>
 
   </div>
 
 
-  <div class="card-footer bg-white d-flex flex-wrap justify-content-between gap-2 p-3">
+  <!-- Form actions -->
 
-    <a class="btn btn-outline-secondary"
-       href="{{ url_for('index_view', index_name=index_name) }}">
+  <div class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 p-3">
+
+
+    <a
+      class="btn btn-outline-secondary"
+      href="{{ url_for('index_view', index_name=index_name) }}"
+    >
+
       Cancel
+
     </a>
 
-    <div class="d-flex gap-2">
+
+    <div class="d-flex flex-wrap gap-2">
+
 
       {% if mode == 'edit' %}
 
-        <a class="btn btn-outline-danger"
-           href="{{ url_for('delete_document', index_name=index_name, doc_id=doc_id) }}">
+        <a
+          class="btn btn-outline-danger"
+          href="{{ url_for('delete_document', index_name=index_name, doc_id=doc_id) }}"
+        >
+
           Delete document
+
         </a>
 
       {% endif %}
 
-      <button class="btn btn-primary" type="submit">
+
+      <button
+        class="btn btn-primary"
+        type="submit"
+      >
+
         {{ 'Create document' if mode == 'new' else 'Save changes' }}
+
       </button>
+
 
     </div>
 
@@ -237,7 +384,9 @@ document.querySelectorAll('[data-set-today]').forEach((button) => {
       return;
     }
 
-    // Use the browser's local date rather than UTC.
+
+    // Use the browser's local date.
+
     const now = new Date();
 
     const year = now.getFullYear();
@@ -250,16 +399,41 @@ document.querySelectorAll('[data-set-today]').forEach((button) => {
       now.getDate()
     ).padStart(2, '0');
 
+
     input.value = `${year}-${month}-${day}`;
 
+
     input.dispatchEvent(
-      new Event('change', { bubbles: true })
+      new Event('change', {
+        bubbles: true
+      })
     );
+
 
     input.focus();
 
   });
 
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const sourceSelect = document.getElementById('field-source');
+    const newSourceContainer = document.getElementById('new-source-container');
+    const newSourceInput = document.getElementById('new-source');
+
+    function toggleNewSource() {
+        const useNewSource = sourceSelect.value === '__new_source__';
+
+        newSourceContainer.hidden = !useNewSource;
+        newSourceInput.required = useNewSource;
+        newSourceInput.disabled = !useNewSource;
+    }
+
+    sourceSelect.addEventListener('change', toggleNewSource);
+
+    // Also handle the initial state when editing a document.
+    toggleNewSource();
 });
 
 </script>
