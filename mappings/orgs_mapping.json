@@ -7,58 +7,24 @@
   "mappings": {
     "dynamic": "strict",
     "properties": {
-      "active": {
-        "type": "boolean",
-        "null_value": true
-      },
-      "careers_url": {
-        "type": "keyword"
-      },
-      "country": {
-        "type": "keyword"
-      },
-      "country_code": {
-        "type": "keyword"
-      },
-      "created": {
-        "type": "date",
-        "format": "yyyy-MM-dd"
-      },
-      "description": {
-        "type": "text"
-      },
-      "excluded": {
-        "type": "boolean",
-        "null_value": false
-      },
-      "jobs_posted": {
-        "type": "integer"
-      },
-      "last_scraped_at": {
-        "type": "date",
-        "format": "yyyy-MM-dd"
-      },
-      "name": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "scrape_url": {
-        "type": "keyword"
-      },
-      "source": {
-        "type": "keyword"
-      },
-      "updated_at": {
-        "type": "date",
-        "format": "yyyy-MM-dd"
-      },
-      "url": {
-        "type": "keyword"
-      }
+      "active": { "type": "boolean", "null_value": true },
+      "careers_url": { "type": "keyword" },
+      "comments": { "type": "text" },
+      "country": { "type": "keyword" },
+      "country_code": { "type": "keyword" },
+      "created": { "type": "date", "format": "yyyy-MM-dd" },
+      "description": { "type": "text" },
+      "excluded": { "type": "boolean", "null_value": false },
+      "jobs_posted": { "type": "integer" },
+      "last_scraped_at": { "type": "date", "format": "yyyy-MM-dd" },
+      "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+      "scrape_url": { "type": "keyword" },
+      "source": { "type": "keyword" },
+      "status_code_careers_url": { "type": "integer" },
+      "status_code_scrape_url": { "type": "integer" },
+      "status_code_url": { "type": "integer" },
+      "updated_at": { "type": "date", "format": "yyyy-MM-dd" },
+      "url": { "type": "keyword" }
     }
   }
 }

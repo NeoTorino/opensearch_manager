@@ -95,6 +95,112 @@ input[type="date"] {
 
 
 /* -----------------------------------------------------
+   Document form (sections, status boxes)
+----------------------------------------------------- */
+
+.form-card {
+    max-width: 960px;
+}
+
+.form-subtitle {
+    max-width: 40rem;
+    color: #495057;
+}
+
+.form-section {
+    padding-bottom: 1.4rem;
+    margin-bottom: 1.4rem;
+    border-bottom: 1px solid #eef0f3;
+}
+
+.form-section:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
+}
+
+.form-section-title {
+    margin: 0 0 .9rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #6c757d;
+}
+
+.form-section-title + .form-section-hint {
+    margin-top: -.5rem;
+}
+
+.form-section-hint {
+    margin-bottom: .9rem;
+    font-size: .8rem;
+    color: #6c757d;
+}
+
+.field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .5rem;
+}
+
+.field-type {
+    font-family: SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .68rem;
+    color: #adb5bd;
+}
+
+.input-group > .form-control.status-code {
+    flex: 0 0 5rem;
+    width: 5rem;
+    text-align: center;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: default;
+}
+
+.input-group-text.status-label {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: #6c757d;
+    background: #f8f9fa;
+}
+
+.status-code.status-unknown {
+    background: #f1f3f5;
+    color: #868e96;
+}
+
+.status-code.status-ok {
+    background: #e6f4ea;
+    color: #146c2e;
+    border-color: #b7dfc0;
+}
+
+.status-code.status-redirect {
+    background: #e7f1ff;
+    color: #0a58ca;
+    border-color: #b6d4fe;
+}
+
+.status-code.status-error {
+    background: #fdecea;
+    color: #b02a37;
+    border-color: #f1b0b7;
+}
+
+.form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    border-bottom-left-radius: .5rem;
+    border-bottom-right-radius: .5rem;
+}
+
+
+/* -----------------------------------------------------
    Tables
 ----------------------------------------------------- */
 
@@ -115,24 +221,89 @@ input[type="date"] {
     padding: .65rem;
 }
 
+/* Centred headers; clipped with an ellipsis when a column is narrow. */
 .table thead th {
+    position: relative;
     vertical-align: middle;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.id-column {
-    min-width: 125px;
-    max-width: 150px;
+code {
+    overflow-wrap: anywhere;
 }
 
-.cell-value {
-    max-width: 260px;
+
+/* -----------------------------------------------------
+   Resizable table columns
+----------------------------------------------------- */
+
+/* Column widths come from <colgroup>; the table width is set by JS. */
+.resizable-table {
+    table-layout: fixed;
+}
+
+.resizable-table td {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-code {
-    overflow-wrap: anywhere;
+.cell-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.col-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 9px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    touch-action: none;
+}
+
+.col-resizer::after {
+    content: "";
+    position: absolute;
+    top: 25%;
+    bottom: 25%;
+    right: 3px;
+    width: 2px;
+    border-radius: 1px;
+    background: #ced4da;
+}
+
+.col-resizer:hover::after,
+.col-resizer.active::after {
+    background: #0d6efd;
+}
+
+body.col-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+/* HTTP status code cell in the table. */
+.cell-status {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.cell-status.status-ok {
+    color: #146c2e;
+}
+
+.cell-status.status-redirect {
+    color: #0a58ca;
+}
+
+.cell-status.status-error {
+    color: #b02a37;
 }
 
 
@@ -165,10 +336,12 @@ th.sortable:hover {
 .filter-row th {
     background: #f8f9fa;
     padding: .45rem;
+    overflow: visible;
 }
 
 .filter-row input {
-    min-width: 90px;
+    width: 100%;
+    min-width: 0;
     font-size: .8rem;
 }
 

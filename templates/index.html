@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}
@@ -68,6 +67,35 @@
 {% elif records %}
 
 
+  {# Initial column widths in px (columns can be resized by dragging). #}
+  {% set col_widths = {
+    'name': 220,
+    'careers_url': 200,
+    'scrape_url': 200,
+    'status_code_scrape_url': 110,
+    'source': 130,
+    'active': 80,
+    'excluded': 90,
+    'updated_at': 115,
+    'title': 240
+  } %}
+
+  {# Friendlier header text for long field names. #}
+  {% set column_labels = {
+    'status_code_scrape_url': 'scrape status'
+  } %}
+
+  {% set default_width = 140 %}
+  {% set id_width = 130 %}
+  {% set actions_width = 175 %}
+
+  {% set ns = namespace(total=id_width + actions_width) %}
+
+  {% for column in columns %}
+    {% set ns.total = ns.total + col_widths.get(column, default_width) %}
+  {% endfor %}
+
+
   <!-- Table information -->
 
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
@@ -79,15 +107,30 @@
     </span>
 
 
-    <button
-      type="button"
-      class="btn btn-sm btn-outline-secondary"
-      id="clear-filters"
-    >
+    <div class="d-flex flex-wrap gap-2">
 
-      Clear filters &amp; sorting
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        id="reset-widths"
+      >
 
-    </button>
+        Reset column widths
+
+      </button>
+
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        id="clear-filters"
+      >
+
+        Clear filters &amp; sorting
+
+      </button>
+
+    </div>
 
   </div>
 
@@ -97,9 +140,25 @@
   <div class="table-responsive bg-white border rounded shadow-sm">
 
     <table
-      class="table table-hover table-sm align-middle mb-0"
+      class="table table-hover table-sm align-middle mb-0 resizable-table"
       id="records-table"
+      data-index="{{ index_name }}"
+      style="width: {{ ns.total }}px;"
     >
+
+      <colgroup>
+
+        <col data-width="{{ id_width }}" style="width: {{ id_width }}px;">
+
+        {% for column in columns %}
+          {% set w = col_widths.get(column, default_width) %}
+          <col data-width="{{ w }}" style="width: {{ w }}px;">
+        {% endfor %}
+
+        <col data-width="{{ actions_width }}" style="width: {{ actions_width }}px;">
+
+      </colgroup>
+
 
       <thead class="table-light">
 
@@ -118,6 +177,8 @@
 
             <span class="sort-indicator"></span>
 
+            <span class="col-resizer" data-col="0" title="Drag to resize"></span>
+
           </th>
 
 
@@ -127,18 +188,21 @@
               class="sortable"
               data-col="{{ loop.index }}"
               aria-sort="none"
+              title="{{ column }}"
             >
 
-              {{ column }}
+              {{ column_labels.get(column, column) }}
 
               <span class="sort-indicator"></span>
+
+              <span class="col-resizer" data-col="{{ loop.index }}" title="Drag to resize"></span>
 
             </th>
 
           {% endfor %}
 
 
-          <th class="text-end">
+          <th>
             Actions
           </th>
 
@@ -171,7 +235,7 @@
                 class="form-control form-control-sm column-filter"
                 data-col="{{ loop.index }}"
                 placeholder="Filter..."
-                aria-label="Filter {{ column }}"
+                aria-label="Filter {{ column_labels.get(column, column) }}"
               >
 
             </th>
@@ -214,8 +278,17 @@
 
             {% for value in record["values"] %}
 
+              {% set column = columns[loop.index0] %}
+              {% set is_status = column.startswith('status_code') %}
+              {% set status_cls = (
+                    'status-ok' if value.startswith('2')
+                    else 'status-redirect' if value.startswith('3')
+                    else 'status-error' if (value.startswith('4') or value.startswith('5'))
+                    else ''
+                 ) if (is_status and value) else '' %}
+
               <td
-                class="cell-value"
+                class="cell-value{% if is_status %} text-center cell-status {{ status_cls }}{% endif %}"
                 data-value="{{ value if value else '' }}"
                 title="{{ value }}"
               >
@@ -372,317 +445,6 @@
 
 {% block scripts %}
 
-<script>
-
-(function () {
-
-  const table = document.getElementById('records-table');
-
-  if (!table) {
-    return;
-  }
-
-
-  const tbody = table.tBodies[0];
-
-  const headers = table.querySelectorAll('th.sortable');
-
-  const filters = table.querySelectorAll('.column-filter');
-
-  const countLabel = document.getElementById('visible-count');
-
-  const noMatches = document.getElementById('no-matches');
-
-  const clearBtn = document.getElementById('clear-filters');
-
-
-  const originalRows = Array.from(tbody.rows);
-
-  const total = originalRows.length;
-
-
-  let sortCol = null;
-
-  let sortDir = 'asc';
-
-
-  // Retrieve the original value of a cell.
-
-  const cellValue = (row, col) => {
-
-    return (
-      row.cells[col].dataset.value || ''
-    ).trim();
-
-  };
-
-
-  // Check whether a value is numeric.
-
-  const isNumeric = (value) => {
-
-    return (
-      value !== ''
-      && !isNaN(Number(value))
-    );
-
-  };
-
-
-  // Compare two values.
-
-  function compare(a, b) {
-
-    // Keep empty values at the bottom.
-
-    if (a === '' && b === '') {
-      return 0;
-    }
-
-    if (a === '') {
-      return 1;
-    }
-
-    if (b === '') {
-      return -1;
-    }
-
-
-    let result;
-
-
-    if (isNumeric(a) && isNumeric(b)) {
-
-      result = Number(a) - Number(b);
-
-    } else {
-
-      result = a.localeCompare(
-        b,
-        undefined,
-        {
-          numeric: true,
-          sensitivity: 'base'
-        }
-      );
-
-    }
-
-
-    return sortDir === 'asc'
-      ? result
-      : -result;
-
-  }
-
-
-  // Sort the table.
-
-  function applySort() {
-
-    let rows;
-
-
-    if (sortCol === null) {
-
-      rows = originalRows.slice();
-
-    } else {
-
-      rows = originalRows.slice().sort((r1, r2) => {
-
-        const a = cellValue(r1, sortCol);
-
-        const b = cellValue(r2, sortCol);
-
-        return compare(a, b);
-
-      });
-
-    }
-
-
-    rows.forEach((row) => {
-
-      tbody.appendChild(row);
-
-    });
-
-
-    // Update sorting indicators.
-
-    headers.forEach((th) => {
-
-      const indicator = th.querySelector('.sort-indicator');
-
-      if (Number(th.dataset.col) === sortCol) {
-
-        th.setAttribute(
-          'aria-sort',
-          sortDir === 'asc'
-            ? 'ascending'
-            : 'descending'
-        );
-
-        indicator.textContent = (
-          sortDir === 'asc'
-            ? '▲'
-            : '▼'
-        );
-
-      } else {
-
-        th.setAttribute('aria-sort', 'none');
-
-        indicator.textContent = '';
-
-      }
-
-    });
-
-  }
-
-
-  // Apply individual column filters.
-
-  function applyFilters() {
-
-    const active = Array.from(filters)
-
-      .map((input) => ({
-
-        col: Number(input.dataset.col),
-
-        term: input.value.trim().toLowerCase()
-
-      }))
-
-      .filter((filter) => filter.term !== '');
-
-
-    let visible = 0;
-
-
-    originalRows.forEach((row) => {
-
-      const match = active.every((filter) => {
-
-        return cellValue(
-          row,
-          filter.col
-        ).toLowerCase().includes(filter.term);
-
-      });
-
-
-      row.classList.toggle(
-        'd-none',
-        !match
-      );
-
-
-      if (match) {
-        visible++;
-      }
-
-    });
-
-
-    if (countLabel) {
-
-      countLabel.textContent = (
-        `Showing ${visible} of ${total} rows on this page`
-      );
-
-    }
-
-
-    if (noMatches) {
-
-      noMatches.classList.toggle(
-        'd-none',
-        visible !== 0
-      );
-
-    }
-
-  }
-
-
-  // Header click: sort.
-
-  headers.forEach((th) => {
-
-    th.addEventListener('click', () => {
-
-      const col = Number(th.dataset.col);
-
-
-      if (sortCol === col) {
-
-        sortDir = (
-          sortDir === 'asc'
-            ? 'desc'
-            : 'asc'
-        );
-
-      } else {
-
-        sortCol = col;
-
-        sortDir = 'asc';
-
-      }
-
-
-      applySort();
-
-    });
-
-  });
-
-
-  // Filter input changes.
-
-  filters.forEach((input) => {
-
-    input.addEventListener(
-      'input',
-      applyFilters
-    );
-
-  });
-
-
-  // Clear all filters and sorting.
-
-  clearBtn.addEventListener('click', () => {
-
-    filters.forEach((input) => {
-
-      input.value = '';
-
-    });
-
-
-    sortCol = null;
-
-    sortDir = 'asc';
-
-
-    applySort();
-
-    applyFilters();
-
-  });
-
-
-  // Initial state.
-
-  applyFilters();
-
-})();
-
-</script>
+<script src="{{ url_for('static', filename='index.js') }}"></script>
 
 {% endblock %}
