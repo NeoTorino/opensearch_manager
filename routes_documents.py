@@ -118,7 +118,9 @@ def register(app: Flask) -> None:
 
                 validate_required_fields(index_name, document)
 
-                if not document:
+                # updated_at is always stamped automatically, so it
+                # does not count as user input.
+                if not any(key != "updated_at" for key in document):
                     raise ValueError(
                         "Enter at least one field before creating "
                         "the document."
@@ -246,10 +248,14 @@ def register(app: Flask) -> None:
                 )
 
             try:
+                # current_source lets build_document detect changed
+                # URLs (to reset their status codes) and stamps
+                # updated_at.
                 document = build_document(
                     index_name,
                     request.form,
                     is_new=False,
+                    current=current_source,
                 )
 
                 validate_required_fields(index_name, document)

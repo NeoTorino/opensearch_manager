@@ -547,6 +547,86 @@
 
   }
 
+  // -------------------------------------------------------------------
+  // Inline toggles (active / excluded)
+  // -------------------------------------------------------------------
+
+  const csrfToken = table.dataset.csrf || '';
+
+  const updatedHeader = table.querySelector('th[title="updated_at"]');
+
+  const updatedCol = updatedHeader ? Number(updatedHeader.dataset.col) : null;
+
+
+  tbody.addEventListener('change', async (event) => {
+
+    const box = event.target.closest('.toggle-field');
+
+    if (!box) {
+      return;
+    }
+
+
+    const desired = box.checked;
+
+    box.disabled = true;
+
+
+    try {
+
+      // Send the token as a form field and as a header.
+      const body = new URLSearchParams();
+
+      body.set('csrf_token', csrfToken);
+      body.set('value', desired ? 'true' : 'false');
+
+      const response = await fetch(box.dataset.url, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: body
+      });
+
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+
+      const data = await response.json();
+
+      // Keep sorting/filtering in sync with the new value.
+      box.closest('td').dataset.value = String(data.value);
+
+      // Reflect the automatic updated_at change.
+      if (updatedCol !== null && data.updated_at) {
+
+        const cell = box.closest('tr').cells[updatedCol];
+
+        cell.dataset.value = data.updated_at;
+        cell.title = data.updated_at;
+        cell.textContent = data.updated_at;
+
+      }
+
+      applyFilters();
+
+    } catch (error) {
+
+      console.error('Toggle failed:', error);
+
+      box.checked = !desired;
+
+      alert('Could not update the field. Please try again.');
+
+    } finally {
+
+      box.disabled = false;
+
+    }
+
+  });
+
 
   // Initial state.
 

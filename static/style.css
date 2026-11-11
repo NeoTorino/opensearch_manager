@@ -98,8 +98,10 @@ input[type="date"] {
    Document form (sections, status boxes)
 ----------------------------------------------------- */
 
-.form-card {
+.form-page {
     max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .form-subtitle {

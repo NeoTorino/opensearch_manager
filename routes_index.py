@@ -1,24 +1,20 @@
-"""Home, index listing, and CSV backup routes."""
+"""Home, index listing, inline toggles, and CSV backup routes."""
 
 from __future__ import annotations
 
 from datetime import date
+from urllib.parse import quote
 
-from flask import (
-    Flask,
-    Response,
-    abort,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Flask, Response, abort, flash, jsonify, redirect,
+                    render_template, request, url_for)
 
 from config import INDEXES
 from documents import search_documents
 from exports import export_index_csv
-from opensearch_client import friendly_opensearch_error
+from opensearch_client import friendly_opensearch_error, opensearch_json
+
+# Boolean fields that can be flipped directly from the index page.
+TOGGLE_FIELDS = ("active", "excluded")
 
 
 def register(app: Flask) -> None:
@@ -93,6 +89,54 @@ def register(app: Flask) -> None:
             pages=pages,
             query=query,
             connection_error=False,
+            toggle_fields=TOGGLE_FIELDS,
+        )
+
+    @app.post("/index/<index_name>/<doc_id>/toggle/<field>")
+    def toggle_field(index_name: str, doc_id: str, field: str):
+        """Flip a boolean field (active / excluded) from the index page."""
+
+        if index_name not in INDEXES:
+            abort(404)
+
+        columns = INDEXES[index_name]["columns"]
+
+        if field not in TOGGLE_FIELDS or field not in columns:
+            abort(400)
+
+        value = request.form.get("value", "").strip().lower() == "true"
+
+        changes = {field: value}
+
+        # Any change stamps today's date, as long as this index has the field.
+        if "updated_at" in columns:
+            changes["updated_at"] = date.today().isoformat()
+
+        try:
+            opensearch_json(
+                "POST",
+                f"/{index_name}/_update/{quote(doc_id, safe='')}",
+                body={"doc": changes},
+                params={"refresh": "true"},
+            )
+
+        except Exception as exc:
+            app.logger.exception(
+                "Toggle of %s failed for %s/%s",
+                field,
+                index_name,
+                doc_id,
+            )
+
+            return jsonify(
+                ok=False,
+                error=friendly_opensearch_error(exc),
+            ), 502
+
+        return jsonify(
+            ok=True,
+            value=value,
+            updated_at=changes.get("updated_at"),
         )
 
     @app.route("/index/<index_name>/backup.csv")

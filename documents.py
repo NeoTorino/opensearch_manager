@@ -17,6 +17,11 @@ from formatting import format_field_value
 from opensearch_client import opensearch_json
 
 
+# Fields named "status_code_<url_field>" hold the last HTTP status of
+# "<url_field>" and are reset whenever that URL changes.
+STATUS_PREFIX = "status_code_"
+
+
 # ---------------------------------------------------------------------
 # Document processing
 # ---------------------------------------------------------------------
@@ -93,11 +98,50 @@ def parse_field_value(
     return raw
 
 
+def apply_auto_fields(
+    properties: dict[str, Any],
+    document: dict[str, Any],
+    current: dict[str, Any] | None = None,
+) -> None:
+    """Set the fields the application manages itself (in place).
+
+    - Resets status_code_<x> when <x> differs from the stored document.
+      Only applies when editing (current is the stored document).
+    - Stamps updated_at with today's date on every save.
+    """
+
+    if current:
+        for status_field in properties:
+
+            if not status_field.startswith(STATUS_PREFIX):
+                continue
+
+            url_field = status_field[len(STATUS_PREFIX):]
+
+            if url_field not in properties:
+                continue
+
+            old_url = str(current.get(url_field) or "").strip()
+            new_url = str(document.get(url_field) or "").strip()
+
+            if old_url != new_url:
+                document[status_field] = None
+
+    if "updated_at" in properties:
+        document["updated_at"] = date.today().isoformat()
+
+
 def build_document(
     index_name: str,
     form,
     is_new: bool,
+    current: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """Build the document to save.
+
+    current is the stored document when editing (None when creating);
+    it is used to detect changed URLs.
+    """
 
     properties = load_mapping(index_name)
     document: dict[str, Any] = {}
@@ -119,6 +163,8 @@ def build_document(
 
         if value is not None or not is_new:
             document[field_name] = value
+
+    apply_auto_fields(properties, document, None if is_new else current)
 
     return document
 

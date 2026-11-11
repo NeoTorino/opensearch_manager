@@ -10,40 +10,22 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
 
   <div>
-
-    <h1 class="h3 mb-1">
-      {{ index_info.title }}
-    </h1>
+    <h1 class="h3 mb-1">{{ index_info.title }}</h1>
 
     <div class="text-secondary small">
-
       <code>{{ index_name }}</code>
-
       <span class="mx-1">·</span>
-
       {{ total }} document{% if total != 1 %}s{% endif %}
 
       {% if query %}
-
         <span class="mx-1">·</span>
-
-        Search:
-        <code>{{ query }}</code>
-
+        Search: <code>{{ query }}</code>
       {% endif %}
-
     </div>
-
   </div>
 
-
-  <a
-    class="btn btn-primary"
-    href="{{ url_for('create_document', index_name=index_name) }}"
-  >
-
+  <a class="btn btn-primary" href="{{ url_for('create_document', index_name=index_name) }}">
     + New document
-
   </a>
 
 </div>
@@ -52,15 +34,9 @@
 {% if connection_error %}
 
   <div class="alert alert-warning">
-
     The index could not be displayed.
-
     Check your connection details in
-
-    <a href="{{ url_for('settings') }}">
-      Settings
-    </a>.
-
+    <a href="{{ url_for('settings') }}">Settings</a>.
   </div>
 
 
@@ -101,35 +77,17 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
 
     <span class="text-secondary small" id="visible-count">
-
       Showing {{ records|length }} rows on this page
-
     </span>
 
-
     <div class="d-flex flex-wrap gap-2">
-
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-secondary"
-        id="reset-widths"
-      >
-
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="reset-widths">
         Reset column widths
-
       </button>
 
-
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-secondary"
-        id="clear-filters"
-      >
-
+      <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-filters">
         Clear filters &amp; sorting
-
       </button>
-
     </div>
 
   </div>
@@ -143,6 +101,7 @@
       class="table table-hover table-sm align-middle mb-0 resizable-table"
       id="records-table"
       data-index="{{ index_name }}"
+      data-csrf="{{ csrf_token() }}"
       style="width: {{ ns.total }}px;"
     >
 
@@ -162,49 +121,30 @@
 
       <thead class="table-light">
 
-
         <!-- Column headers -->
 
         <tr>
 
-          <th
-            class="id-column sortable"
-            data-col="0"
-            aria-sort="none"
-          >
-
+          <th class="id-column sortable" data-col="0" aria-sort="none">
             Document ID
-
             <span class="sort-indicator"></span>
-
             <span class="col-resizer" data-col="0" title="Drag to resize"></span>
-
           </th>
 
-
           {% for column in columns %}
-
             <th
               class="sortable"
               data-col="{{ loop.index }}"
               aria-sort="none"
               title="{{ column }}"
             >
-
               {{ column_labels.get(column, column) }}
-
               <span class="sort-indicator"></span>
-
               <span class="col-resizer" data-col="{{ loop.index }}" title="Drag to resize"></span>
-
             </th>
-
           {% endfor %}
 
-
-          <th>
-            Actions
-          </th>
+          <th>Actions</th>
 
         </tr>
 
@@ -214,7 +154,6 @@
         <tr class="filter-row">
 
           <th class="id-column">
-
             <input
               type="search"
               class="form-control form-control-sm column-filter"
@@ -222,14 +161,10 @@
               placeholder="Filter..."
               aria-label="Filter Document ID"
             >
-
           </th>
 
-
           {% for column in columns %}
-
             <th>
-
               <input
                 type="search"
                 class="form-control form-control-sm column-filter"
@@ -237,11 +172,8 @@
                 placeholder="Filter..."
                 aria-label="Filter {{ column_labels.get(column, column) }}"
               >
-
             </th>
-
           {% endfor %}
-
 
           <th></th>
 
@@ -260,17 +192,10 @@
 
             <!-- Document ID -->
 
-            <td
-              class="id-column"
-              data-value="{{ record['id'] }}"
-            >
-
+            <td class="id-column" data-value="{{ record['id'] }}">
               <code title="{{ record['id'] }}">
-
                 {{ record['id'][:12] }}{% if record['id']|length > 12 %}…{% endif %}
-
               </code>
-
             </td>
 
 
@@ -280,6 +205,7 @@
 
               {% set column = columns[loop.index0] %}
               {% set is_status = column.startswith('status_code') %}
+              {% set is_toggle = column in toggle_fields %}
               {% set status_cls = (
                     'status-ok' if value.startswith('2')
                     else 'status-redirect' if value.startswith('3')
@@ -287,15 +213,38 @@
                     else ''
                  ) if (is_status and value) else '' %}
 
-              <td
-                class="cell-value{% if is_status %} text-center cell-status {{ status_cls }}{% endif %}"
-                data-value="{{ value if value else '' }}"
-                title="{{ value }}"
-              >
+              {% if is_toggle %}
 
-                {{ value if value else "—" }}
+                {% set raw = record['source'].get(column) %}
+                {% set checked = raw is sameas true or (raw | string | lower) == 'true' %}
 
-              </td>
+                <td
+                  class="cell-value text-center"
+                  data-value="{{ 'true' if checked else 'false' }}"
+                >
+                  <div class="form-check form-switch d-flex justify-content-center m-0">
+                    <input
+                      class="form-check-input toggle-field"
+                      type="checkbox"
+                      role="switch"
+                      data-url="{{ url_for('toggle_field', index_name=index_name, doc_id=record['id'], field=column) }}"
+                      aria-label="Toggle {{ column }}"
+                      {% if checked %}checked{% endif %}
+                    >
+                  </div>
+                </td>
+
+              {% else %}
+
+                <td
+                  class="cell-value{% if is_status %} text-center cell-status {{ status_cls }}{% endif %}"
+                  data-value="{{ value if value else '' }}"
+                  title="{{ value }}"
+                >
+                  {{ value if value else "—" }}
+                </td>
+
+              {% endif %}
 
             {% endfor %}
 
@@ -308,19 +257,14 @@
                 class="btn btn-sm btn-outline-primary"
                 href="{{ url_for('edit_document', index_name=index_name, doc_id=record['id']) }}"
               >
-
                 View/Edit
-
               </a>
-
 
               <a
                 class="btn btn-sm btn-outline-danger"
                 href="{{ url_for('delete_document', index_name=index_name, doc_id=record['id']) }}"
               >
-
                 Delete
-
               </a>
 
             </td>
@@ -336,13 +280,8 @@
   </div>
 
 
-  <div
-    id="no-matches"
-    class="alert alert-secondary mt-3 d-none"
-  >
-
+  <div id="no-matches" class="alert alert-secondary mt-3 d-none">
     No rows on this page match the current filters.
-
   </div>
 
 
@@ -351,42 +290,29 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
 
     <span class="text-secondary small">
-
       Page {{ page }} of {{ pages }}
-
     </span>
-
 
     <nav aria-label="Document pages">
 
       <ul class="pagination pagination-sm mb-0">
 
-
         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-
           <a
             class="page-link"
             href="{{ url_for('index_view', index_name=index_name, q=query, page=page-1) }}"
           >
-
             Previous
-
           </a>
-
         </li>
 
-
         <li class="page-item {% if page >= pages %}disabled{% endif %}">
-
           <a
             class="page-link"
             href="{{ url_for('index_view', index_name=index_name, q=query, page=page+1) }}"
           >
-
             Next
-
           </a>
-
         </li>
 
       </ul>
@@ -403,35 +329,18 @@
 
   <div class="border rounded bg-white p-5 text-center shadow-sm">
 
-    <h2 class="h5">
-
-      No documents found
-
-    </h2>
-
+    <h2 class="h5">No documents found</h2>
 
     <p class="text-secondary mb-3">
-
       {% if query %}
-
         Try another search term or clear the search box in the navbar.
-
       {% else %}
-
         This index is empty.
-
       {% endif %}
-
     </p>
 
-
-    <a
-      class="btn btn-primary"
-      href="{{ url_for('create_document', index_name=index_name) }}"
-    >
-
+    <a class="btn btn-primary" href="{{ url_for('create_document', index_name=index_name) }}">
       Create the first document
-
     </a>
 
   </div>
